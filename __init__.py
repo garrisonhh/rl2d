@@ -1,4 +1,2 @@
-import rl2d
-from rl2d.rl2d import RLScene
-
-rl2d.init()
+from rl2d.tileset import *
+from rl2d.scene import *
