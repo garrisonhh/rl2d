@@ -1,4 +1,5 @@
 import pygame as pg
+import random
 
 class Sprite(pg.sprite.Sprite):
     """
@@ -156,14 +157,29 @@ class Particle(Sprite):
 
         super().update(dt)
 
-"""
 class ParticleSpawner:
-    #spawns a Particle(*parameters) every interval +-variance milliseconds
-    def __init__(self, tilesize, interval, variance, parameters):
+    """
+    spawns a particle every interval +-variance milliseconds
+    unusable in current state, need to extend and rewrite get_particle() to return a valid particle
+    """
+    def __init__(self, scene, interval, variance):
+        self.scene = scene
         self.interval = interval
         self.variance = variance
-        self.params = [tilesize, *parameters]
+
+        self.tick = 0
+
+        self.__next_interval()
+
+    def get_particle(self):
+        return None
+
+    def __next_interval(self):
+        self.tick += self.interval + (random.randint(-self.variance, self.variance))
 
     def update(self, dt):
-        pass
-"""
+        self.tick -= dt
+
+        if self.tick <= 0:
+            self.scene.add(self.get_particle())
+            self.__next_interval()

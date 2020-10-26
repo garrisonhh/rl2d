@@ -54,34 +54,27 @@ class Scene(pg.Surface):
         self.tset = tileset
 
         self.group = pg.sprite.LayeredUpdates()
-        #self.pspawners = []
+        self.pspawners = []
 
-    # adds a sprite to group, and returns it for later reference
-    # image can be a tileset key or a pygame Surface
-    def new_sprite(self, loc, image, **kwargs):
-        if not isinstance(image, pg.Surface):
-            image = self.tset[image]
+    def add(self, element):
+        if isinstance(element, pg.sprite.Sprite):
+            self.group.add(element)
+        else:
+            raise ValueError("element %s is not a Sprite or Particle." % (str(element),))
+        return element
 
-        sprite = Sprite(self.tsize, loc, image, **kwargs)
-        self.group.add(sprite)
-        return sprite
-
-    def new_particle(self, loc, image, lifespan, **kwargs):
-        if not isinstance(image, pg.Surface):
-            image = self.tset[image]
-
-        particle = Particle(self.tsize, loc, image, lifespan, **kwargs)
-        self.group.add(particle)
-
-    #def new_pspawner(self, interval, variance, parameters):
-    #    self.pspawners.append(ParticleSpawner())
+    def add_pspawner(self, pspawner):
+        self.pspawners.append(pspawner)
 
     def update(self, dt):
         self.blit(self.bg, (0, 0))
+
+        for spawner in self.pspawners:
+            spawner.update(dt)
+        self.group.update(dt)
 
         #determine sprite layers (this looks hacky and slow but it runs better than the more complicated stuff I tried)
         for sprite in self.group.sprites():
             self.group.change_layer(sprite, sprite.rect.bottom)
 
-        self.group.update(dt)
         self.group.draw(self)
