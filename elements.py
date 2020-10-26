@@ -1,48 +1,131 @@
 import pygame as pg
 
-def _scale(loc, tsize):
-    return (loc[0] * tsize[0], loc[1] * tsize[1])
-
 class Sprite(pg.sprite.Sprite):
-    def __init__(self, image, loc, tsize):
+    """
+    Sprite assumes that it is the same size as the tilesize, unless spritesize is specified
+        the bottom center of the sprite will always be the at the bottom center of the tile, regardless of sprite size
+    if specified, animations should be a dict for each row of the image
+        image will choose the first row
+        key will be the name of the animation
+        value can be:
+            tuple (numFrames, durationFrames)
+            list [duration0, duration1, ... durationN]
+        Sprite.anims will become a dict of {key : [(frame0, dur0), (frame1, dur1), ... (frameN, durN)]}
+    """
+    def __init__(self, tilesize, location, image, spritesize = 0, animations = 0, startanim = 0):
         super().__init__()
 
-        self.image = image
-        self.rect = pg.Rect(*_scale(loc, tsize), *image.get_size())
-        self.tsize = tsize
+        self.image = 0
+        self.rect = 0
+        self.tsize = tilesize
+
+        self.ssize = spritesize
+        self.anims = 0
+        self.anim = 0 # current animation arr
+        self.frame = 0 # current frame
+        self.framedur = 0 #time left on frame
+
+        #detect sprite size as necessary
+        if not self.ssize:
+            #get sprite size (ssize)
+            if image.get_width() != self.tsize[0] or image.get_height() != self.tsize[1]:
+                self.ssize = image.get_size()
+            else:
+                self.ssize = self.tsize
+
+        #get image(s)
+        if animations:
+            self.anims = {}
+            w, h = self.ssize
+            y = 0
+
+            for k, v in animations.items():
+                self.anims[k] = []
+
+                if type(v) is tuple:
+                    for i in range(v[0]):
+                        self.anims[k].append((image.subsurface((i * w, y, w, h)), v[1]))
+                elif type(v) is list:
+                    for i in range(len(v)):
+                        self.anims[k].append((image.subsurface((i * w, y, w, h)), v[i]))
+
+                y += h
+
+            self.set_anim(startanim)
+        else:
+            self.image = image
+
+        self.rect = pg.Rect((0, 0, *self.ssize))
 
         #movement vars
-        self.cur = loc #current location
-        self.dest = loc #destination location
-        self.move = 0
-        self.totmove = 0
+        self.curpos = (0, 0) #current position, because Rect doesn't take float arguments
+        self.dstloc = (0, 0) #location after motion
+        self.movdir = (0, 0) #offset in 1000 ms (1s)
+        self.movdur = 0 #duration of movement remaining
 
-    #sprite moves to loc over time (in ms)
-    def goto_loc(self, loc, time = 0):
-        self.dest = loc
+        self.__setabsloc(location)
 
-        if time == 0:
-            self.rect.topleft = _scale(loc, self.tsize)
+    def moving(self):
+        return self.movdur > 0
+
+    def set_anim(self, key, frame = 0):
+        self.anim = self.anims[key]
+        self.frame = frame
+        self.image, self.framedur = self.anim[frame]
+
+    #move to absolute loc
+    def move_abs(self, loc, duration = 0):
+        self.__move((loc[0] - self.dstloc[0], loc[1] - self.dstloc[1]), loc, duration)
+
+    #move by offset
+    def move_rel(self, rel, duration = 0):
+        self.__move(rel, (rel[0] + self.dstloc[0], rel[1] + self.dstloc[1]), duration)
+
+    #scales loc to tilesize of sprite
+    def __scale(self, loc):
+        return (loc[0] * self.tsize[0], loc[1] * self.tsize[1])
+
+    def __descale(self, pos):
+        return (pos[0] / self.tsize[0], pos[1] / self.tsize[1])
+
+    def __move(self, rel, loc, dur):
+        self.dstloc = (self.dstloc[0] + rel[0], self.dstloc[1] + rel[1])
+
+        if (dur == 0): #teleport
+            self.__setabsloc(loc)
         else:
-            self.move = time
-            self.totmove = time
+            self.movdur = dur
+            dscale = 1000 / dur
+            self.movdir = (rel[0] * dscale, rel[1] * dscale)
 
-    def goto_rel(self, rel, time = 0):
-        self.goto_loc((self.cur[0] + rel[0], self.cur[1] + rel[1]), time)
+    def __setabsloc(self, loc):
+        self.dstloc = loc
+        self.curpos = self.__scale(loc)
+        self.rect.midbottom = (self.curpos[0] + int(self.tsize[0] // 2), self.curpos[1] + self.tsize[1])
 
     def update(self, dt):
-        #move if necessary
-        if self.move > 0:
-            dist = min(dt, self.move) / self.totmove
-            self.move = max(self.move - dt, 0)
+        #movement
+        if self.movdur > 0:
+            self.movdur -= dt
+            time = dt / 1000
+            dx, dy = self.__scale((time * self.movdir[0], time * self.movdir[1]))
+            self.curpos = (self.curpos[0] + dx, self.curpos[1] + dy)
+            self.rect.midbottom = (self.curpos[0] + (self.tsize[0] / 2), self.curpos[1] + self.tsize[1])
 
-            if self.move == 0:
-                self.rect.topleft = _scale(self.dest, self.tsize)
-                self.cur = self.dest
-            else:
-                self.rect.topleft = _scale(
-                    [self.dest[i] + (self.cur[i] - self.dest[i]) * (self.move / self.totmove) for i in (0, 1)],
-                    self.tsize)
+            if self.movdur <= 0:
+                self.movdur = 0
+                self.__setabsloc(self.dstloc)
+
+        #animate as necessary
+        if self.anims and len(self.anim) > 1:
+            self.framedur -= dt
+
+            if self.framedur <= 0:
+                self.frame += 1
+                self.frame %= len(self.anim)
+
+                self.image = self.anim[self.frame][0]
+                self.framedur += self.anim[self.frame][1]
 
 class Particle(Sprite):
     """
@@ -50,22 +133,32 @@ class Particle(Sprite):
     they spawn with the center at loc rather than the top left corner
     particles can move TODO more features!
     """
-    def __init__(self, image, loc, tsize, lifespan,
-        reldest = None):
-        super().__init__(image, loc, tsize)
-        self.rect.center = loc
+    def __init__(self, tilesize, location, image, lifespan, rel = 0, **kwargs):
+        super().__init__(tilesize, location, image, **kwargs)
 
         self.lifespan = lifespan
         self.age = 0
 
-        if reldest is not None:
-            self.goto_rel(reldest, lifespan)
+        if rel:
+            self.move_rel(rel, lifespan)
 
     def update(self, dt):
+        self.age += dt
+
         if self.age >= self.lifespan:
             self.kill()
             return
 
-        self.age += dt
-
         super().update(dt)
+
+"""
+class ParticleSpawner:
+    #spawns a Particle(*parameters) every interval +-variance milliseconds
+    def __init__(self, tilesize, interval, variance, parameters):
+        self.interval = interval
+        self.variance = variance
+        self.params = [tilesize, *parameters]
+
+    def update(self, dt):
+        pass
+"""

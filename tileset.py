@@ -1,11 +1,44 @@
 import pygame as pg
 
 class Tileset:
-    def __init__(self, tilesize):
-        self.tsize = tilesize
+    def __init__(self):
         self.tiles = {}
 
-    def load_sheet(self, sheetpath, defspath, palette = 0):
+    def load_tile(self, sheet, key, rect = 0, palette = 0, fg = None, bg = None):
+        tile = 0
+        if rect == 0: # no rect -> whole image is tile
+            rect = (0, 0, *sheet.get_size())
+            tile = sheet.copy()
+        else: # rect -> subsurface of image is tile
+            tile = sheet.subsurface(rect).copy()
+
+        # recolor
+        if palette:
+            fg = palette.get_at((fg, 0))
+            if bg is not None:
+                bg = palette.get_at((bg, 0))
+            else:
+                bg = (0, 0, 0, 0)
+            for y in range(rect[3]):
+                for x in range(rect[2]):
+                    if tile.get_at((x, y))[:3] == (0, 0, 0):
+                        tile.set_at((x, y), bg)
+                    elif tile.get_at((x, y))[:3] == (255, 255, 255):
+                        tile.set_at((x, y), fg)
+
+        self.tiles[key] = tile
+
+    """
+    defs look like this:
+    ; this is a comment
+    key x y ; no palette
+    key x y fg ; yes palette, white -> fg, black -> transparent
+    key x y fg bg ; yes palette, white -> fg, black -> bg
+
+    one load_sheet() call, one tilesize. u can load multiple sized images
+    using multiple load_sheet() or load_tile() calls
+    """
+    def load_sheet(self, tilesize, sheetpath, defspath, palette = 0):
         sheet = pg.image.load(sheetpath).convert_alpha()
 
         if palette:
@@ -21,26 +54,42 @@ class Tileset:
                 if len(line) == 0:
                     continue
 
-                key, x, y = line[0], int(line[1]), int(line[2])
-                tile = sheet.subsurface((x * self.tsize[0], y * self.tsize[1], *self.tsize)).copy()
+                key = line[0]
+                rect = (int(line[1]) * tilesize[0], int(line[2]) * tilesize[1], *tilesize)
 
                 if palette:
                     #get colors
-                    fg = palette.get_at((int(line[3]), 0))
-                    bg = (0, 0, 0, 0)
+                    fg = int(line[3])
+                    bg = None
                     if len(line) > 4:
-                        bg = palette.get_at((int(line[4]), 0))
+                        bg = int(line[4])
 
-                    #make new tile
-                    for y in range(self.tsize[1]):
-                        for x in range(self.tsize[0]):
-                            if tile.get_at((x, y))[:3] == (0, 0, 0):
-                                tile.set_at((x, y), bg)
-                            elif tile.get_at((x, y))[:3] == (255, 255, 255):
-                                tile.set_at((x, y), fg)
+                    self.load_tile(sheet, key, rect, palette, fg, bg)
+                else:
+                    self.load_tile(sheet, key, rect)
 
-                self.tiles[key] = tile
+    """
+    loads all possible printable characters for the tilesheet in specified encoding
+        assumes horizontal format
+    see python 3's encodings documentation for reference on encoding:
+    https://docs.python.org/3/library/codecs.html#standard-encodings
+    """
+    def load_font(self, charsize, sheetpath, encoding = 'ascii', palette = 0, fg = None, bg = None):
+        sheet = pg.image.load(sheetpath).convert_alpha()
 
-    #allow access to tileset with Tileset[key]
+        if palette:
+            palette = pg.image.load(palette)
+
+        row = int(sheet.get_width() / charsize[0])
+        for y in range(int(sheet.get_height() / charsize[1])):
+            for x in range(row):
+                #this turns the index of the character into a string of the specified encoding.
+                c = bytes([y * row + x])
+                c = c.decode(encoding, errors = 'ignore')
+
+                if c.isprintable():
+                    self.load_tile(sheet, c, (x * charsize[0], y * charsize[1], *charsize), palette, fg, bg)
+
+    #allows access to tileset with Tileset[key]
     def __getitem__(self, key):
         return self.tiles[key]
