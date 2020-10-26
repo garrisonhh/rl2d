@@ -15,7 +15,6 @@ class Layer(pg.Surface):
             flags = pg.SRCALPHA
         )
 
-
     def set(self, loc, key):
         loc = (loc[0] * self.tsize[0], loc[1] * self.tsize[1])
         self.blit(self.tset[key], loc)
@@ -54,8 +53,7 @@ class Scene(pg.Surface):
         self.tsize = tilesize
         self.tset = tileset
 
-        self.particles = pg.sprite.Group()
-        self.sprites = pg.sprite.LayeredUpdates()
+        self.group = pg.sprite.LayeredUpdates()
         #self.pspawners = []
 
     # adds a sprite to group, and returns it for later reference
@@ -65,7 +63,7 @@ class Scene(pg.Surface):
             image = self.tset[image]
 
         sprite = Sprite(self.tsize, loc, image, **kwargs)
-        self.sprites.add(sprite)
+        self.group.add(sprite)
         return sprite
 
     def new_particle(self, loc, image, lifespan, **kwargs):
@@ -73,7 +71,7 @@ class Scene(pg.Surface):
             image = self.tset[image]
 
         particle = Particle(self.tsize, loc, image, lifespan, **kwargs)
-        self.particles.add(particle)
+        self.group.add(particle)
 
     #def new_pspawner(self, interval, variance, parameters):
     #    self.pspawners.append(ParticleSpawner())
@@ -81,8 +79,9 @@ class Scene(pg.Surface):
     def update(self, dt):
         self.blit(self.bg, (0, 0))
 
-        self.particles.update(dt)
-        self.particles.draw(self)
+        #determine sprite layers (this looks hacky and slow but it runs better than the more complicated stuff I tried)
+        for sprite in self.group.sprites():
+            self.group.change_layer(sprite, sprite.rect.bottom)
 
-        self.sprites.update(dt)
-        self.sprites.draw(self)
+        self.group.update(dt)
+        self.group.draw(self)

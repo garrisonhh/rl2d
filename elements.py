@@ -11,6 +11,8 @@ class Sprite(pg.sprite.Sprite):
             tuple (numFrames, durationFrames)
             list [duration0, duration1, ... durationN]
         Sprite.anims will become a dict of {key : [(frame0, dur0), (frame1, dur1), ... (frameN, durN)]}
+    set startanim to an animation key to set the animation at initialization
+        otherwise, it will attempt to access animations[0]
     """
     def __init__(self, tilesize, location, image, spritesize = 0, animations = 0, startanim = 0):
         super().__init__()
@@ -131,7 +133,10 @@ class Particle(Sprite):
     """
     particles are sprites with a limited lifespan
     they spawn with the center at loc rather than the top left corner
-    particles can move TODO more features!
+    particles can move over lifespan by setting rel to an offset
+        unsure of what other features to add
+            rotating/scaling doesn't make sense for pixelated format
+        give particles an animation for the cool effects u want!
     """
     def __init__(self, tilesize, location, image, lifespan, rel = 0, **kwargs):
         super().__init__(tilesize, location, image, **kwargs)
