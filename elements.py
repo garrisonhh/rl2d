@@ -63,7 +63,7 @@ class Sprite(pg.sprite.Sprite):
         #movement vars
         self.curpos = (0, 0) #current position, because Rect doesn't take float arguments
         self.dstloc = (0, 0) #location after motion
-        self.movdir = (0, 0) #offset in 1000 ms (1s)
+        self.movvec = (0, 0) #offset in 1000 ms (1s)
         self.movdur = 0 #duration of movement remaining
 
         self.__setabsloc(location)
@@ -76,30 +76,33 @@ class Sprite(pg.sprite.Sprite):
         self.frame = frame
         self.image, self.framedur = self.anim[frame]
 
-    #move to absolute loc
+    #move to absolute location with __move
     def move_abs(self, loc, duration = 0):
         self.__move((loc[0] - self.dstloc[0], loc[1] - self.dstloc[1]), loc, duration)
 
-    #move by offset
+    #move by offset with __move
     def move_rel(self, rel, duration = 0):
         self.__move(rel, (rel[0] + self.dstloc[0], rel[1] + self.dstloc[1]), duration)
 
-    #scales loc to tilesize of sprite
     def __scale(self, loc):
         return (loc[0] * self.tsize[0], loc[1] * self.tsize[1])
 
     def __descale(self, pos):
         return (pos[0] / self.tsize[0], pos[1] / self.tsize[1])
 
+    #if duration < 0, moves forever and takes rel is a vector over 1000 ms
     def __move(self, rel, loc, dur):
         self.dstloc = (self.dstloc[0] + rel[0], self.dstloc[1] + rel[1])
 
         if (dur == 0): #teleport
             self.__setabsloc(loc)
         else:
+            dscale = 1
+            if dur > 0:
+                dscale = 1000 / dur
+
             self.movdur = dur
-            dscale = 1000 / dur
-            self.movdir = (rel[0] * dscale, rel[1] * dscale)
+            self.movvec = (rel[0] * dscale, rel[1] * dscale)
 
     def __setabsloc(self, loc):
         self.dstloc = loc
@@ -108,16 +111,20 @@ class Sprite(pg.sprite.Sprite):
 
     def update(self, dt):
         #movement
-        if self.movdur > 0:
-            self.movdur -= dt
+        if self.movdur != 0:
+            #move along vector
             time = dt / 1000
-            dx, dy = self.__scale((time * self.movdir[0], time * self.movdir[1]))
+            dx, dy = self.__scale((time * self.movvec[0], time * self.movvec[1]))
             self.curpos = (self.curpos[0] + dx, self.curpos[1] + dy)
             self.rect.midbottom = (self.curpos[0] + (self.tsize[0] / 2), self.curpos[1] + self.tsize[1])
 
-            if self.movdur <= 0:
-                self.movdur = 0
-                self.__setabsloc(self.dstloc)
+            #if move duration is finite, tick move duration down until 0
+            if self.movdur > 0:
+                self.movdur -= dt
+
+                if self.movdur <= 0:
+                    self.movdur = 0
+                    self.__setabsloc(self.dstloc)
 
         #animate as necessary
         if self.anims and len(self.anim) > 1:
@@ -139,14 +146,14 @@ class Particle(Sprite):
             rotating/scaling doesn't make sense for pixelated format
         give particles an animation for the cool effects u want!
     """
-    def __init__(self, tilesize, location, image, lifespan, rel = 0, **kwargs):
+    def __init__(self, tilesize, location, image, lifespan, vector = 0, **kwargs):
         super().__init__(tilesize, location, image, **kwargs)
 
         self.lifespan = lifespan
         self.age = 0
 
-        if rel:
-            self.move_rel(rel, lifespan)
+        if vector:
+            self.move_rel(vector, -1)
 
     def update(self, dt):
         self.age += dt
@@ -159,6 +166,7 @@ class Particle(Sprite):
 
 class ParticleSpawner:
     """
+    *WIP* not happy with the state of this implementation rn
     spawns a particle every interval +-variance milliseconds
     unusable in current state, need to extend and rewrite get_particle() to return a valid particle
     """
