@@ -1,4 +1,5 @@
-from pygame import Rect, sprite
+from pygame import Rect, sprite, Surface
+from rl2d import tileset as tset
 
 class Sprite(sprite.Sprite):
     """
@@ -30,6 +31,10 @@ class Sprite(sprite.Sprite):
         self.anim = 0 # current animation arr
         self.frame = 0 # current frame
         self.framedur = 0 # ms left on current frame
+
+        #detect if image is a tileset key
+        if not isinstance(image, Surface):
+            image = tset.get(image)
 
         #detect sprite size as necessary
         if not self.ssize:

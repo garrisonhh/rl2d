@@ -1,14 +1,14 @@
 import pygame as pg
 from rl2d.elements import *
+from rl2d import tileset as tset
 
 class Layer(pg.Surface):
     """
     Layers have basic functionality for drawing tilesets onto a grid.
     """
-    def __init__(self, size, tilesize, tileset):
+    def __init__(self, size, tilesize):
         self.size = size
         self.tsize = tilesize
-        self.tset = tileset
 
         super().__init__(
             (size[0] * self.tsize[0], size[1] * self.tsize[1]),
@@ -17,7 +17,7 @@ class Layer(pg.Surface):
 
     def set(self, loc, key):
         loc = (loc[0] * self.tsize[0], loc[1] * self.tsize[1])
-        self.blit(self.tset[key], loc)
+        self.blit(tset.get(key), loc)
 
     """
     write functions write out each key in an iterable
@@ -51,12 +51,11 @@ class Scene(pg.Surface):
             if a drawheightoffset is specified)
 
     """
-    def __init__(self, size, tilesize, tileset, elementgroups = 1, defaultgroup = 0):
-        self.bg = Layer(size, tilesize, tileset)
+    def __init__(self, size, tilesize, elementgroups = 1, defaultgroup = 0):
+        self.bg = Layer(size, tilesize)
         super().__init__(self.bg.get_size())
 
         self.tsize = tilesize
-        self.tset = tileset
 
         self.dgroup = defaultgroup
         self.groups = []
@@ -69,8 +68,6 @@ class Scene(pg.Surface):
             if group == -1:
                 group = self.dgroup
             self.groups[group].add(element)
-        else:
-            raise ValueError("element %s is not a valid foreground element." % (str(element),))
         return element
 
     def add_pspawner(self, pspawner):
