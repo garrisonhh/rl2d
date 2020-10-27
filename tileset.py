@@ -2,6 +2,9 @@ import pygame as pg
 
 TILES = {}
 
+def get(key):
+    return TILES[key]
+
 def load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None):
     tile = 0
     if rect == 0: # no rect -> whole image is tile
@@ -88,6 +91,3 @@ def load_font(charsize, tilesheet, encoding = 'ascii', palette = 0, fg = None, b
 
             if c.isprintable():
                 load_tile(sheet, c, (x * charsize[0], y * charsize[1], *charsize), palette, fg, bg)
-
-def get(key):
-    return TILES[key]
