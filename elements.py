@@ -1,10 +1,10 @@
-import pygame as pg
-import random
+from pygame import Rect, sprite
 
-class Sprite(pg.sprite.Sprite):
+class Sprite(sprite.Sprite):
     """
     Sprite assumes that it is the same size as the tilesize, unless spritesize is specified
         the bottom center of the sprite will always be the at the bottom center of the tile, regardless of sprite size
+
     if specified, animations should be a dict for each row of the image
         image will choose the first row
         key will be the name of the animation
@@ -14,8 +14,10 @@ class Sprite(pg.sprite.Sprite):
         Sprite.anims will become a dict of {key : [(frame0, dur0), (frame1, dur1), ... (frameN, durN)]}
     set startanim to an animation key to set the animation at initialization
         otherwise, it will attempt to access animations[0]
+
+    when placed in a scene, scene calls draw_height() to sort layers.
     """
-    def __init__(self, tilesize, location, image, spritesize = 0, animations = 0, startanim = 0):
+    def __init__(self, tilesize, location, image, spritesize = 0, animations = 0, startanim = 0, drawheightoffset = 0):
         super().__init__()
 
         self.image = 0
@@ -23,10 +25,11 @@ class Sprite(pg.sprite.Sprite):
         self.tsize = tilesize
 
         self.ssize = spritesize
+        self.dhoffset = drawheightoffset * self.tsize[1]
         self.anims = 0
         self.anim = 0 # current animation arr
         self.frame = 0 # current frame
-        self.framedur = 0 #time left on frame
+        self.framedur = 0 # ms left on current frame
 
         #detect sprite size as necessary
         if not self.ssize:
@@ -58,7 +61,7 @@ class Sprite(pg.sprite.Sprite):
         else:
             self.image = image
 
-        self.rect = pg.Rect((0, 0, *self.ssize))
+        self.rect = Rect((0, 0, *self.ssize))
 
         #movement vars
         self.curpos = (0, 0) #current position, because Rect doesn't take float arguments
@@ -83,6 +86,9 @@ class Sprite(pg.sprite.Sprite):
     #move by offset with __move
     def move_rel(self, rel, duration = 0):
         self.__move(rel, (rel[0] + self.dstloc[0], rel[1] + self.dstloc[1]), duration)
+
+    def draw_height(self):
+        return self.rect.bottom + self.dhoffset
 
     def __scale(self, loc):
         return (loc[0] * self.tsize[0], loc[1] * self.tsize[1])
@@ -163,31 +169,3 @@ class Particle(Sprite):
             return
 
         super().update(dt)
-
-class ParticleSpawner:
-    """
-    *WIP* not happy with the state of this implementation rn
-    spawns a particle every interval +-variance milliseconds
-    unusable in current state, need to extend and rewrite get_particle() to return a valid particle
-    """
-    def __init__(self, scene, interval, variance):
-        self.scene = scene
-        self.interval = interval
-        self.variance = variance
-
-        self.tick = 0
-
-        self.__next_interval()
-
-    def get_particle(self):
-        return None
-
-    def __next_interval(self):
-        self.tick += self.interval + (random.randint(-self.variance, self.variance))
-
-    def update(self, dt):
-        self.tick -= dt
-
-        if self.tick <= 0:
-            self.scene.add(self.get_particle())
-            self.__next_interval()

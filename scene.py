@@ -42,25 +42,35 @@ class Layer(pg.Surface):
 
 class Scene(pg.Surface):
     """
-    Scenes consist of a background Layer, and foreground elements (particles
-    and sprites) that are drawn over it.
+    Scenes consist of a background Layer and foreground elements (particles
+    and sprites) that are drawn over the background.
+
     Scene automatically manages updating the screen when fg elements move.
+        Scene draws groups back-to-front (group 0 is on top, group N is back)
+            within groups, sprites are ordered based upon y position (and offset
+            if a drawheightoffset is specified)
+
     """
-    def __init__(self, size, tilesize, tileset):
+    def __init__(self, size, tilesize, tileset, elementgroups = 1, defaultgroup = 0):
         self.bg = Layer(size, tilesize, tileset)
         super().__init__(self.bg.get_size())
 
         self.tsize = tilesize
         self.tset = tileset
 
-        self.group = pg.sprite.LayeredUpdates()
+        self.dgroup = defaultgroup
+        self.groups = []
+        for i in range(elementgroups):
+            self.groups.append(pg.sprite.LayeredUpdates())
         self.pspawners = []
 
-    def add(self, element):
+    def add(self, element, group = -1):
         if isinstance(element, pg.sprite.Sprite):
-            self.group.add(element)
+            if group == -1:
+                group = self.dgroup
+            self.groups[group].add(element)
         else:
-            raise ValueError("element %s is not a Sprite or Particle." % (str(element),))
+            raise ValueError("element %s is not a valid foreground element." % (str(element),))
         return element
 
     def add_pspawner(self, pspawner):
@@ -71,10 +81,12 @@ class Scene(pg.Surface):
 
         for spawner in self.pspawners:
             spawner.update(dt)
-        self.group.update(dt)
 
-        #determine sprite layers (this looks hacky and slow but it runs better than the more complicated stuff I tried)
-        for sprite in self.group.sprites():
-            self.group.change_layer(sprite, sprite.rect.bottom)
+        for group in self.groups[::-1]:
+            group.update(dt)
 
-        self.group.draw(self)
+            #determine sprite layers (this looks hacky and slow but it runs better than the more complicated stuff I tried)
+            for sprite in group.sprites():
+                group.change_layer(sprite, sprite.draw_height())
+
+            group.draw(self)
