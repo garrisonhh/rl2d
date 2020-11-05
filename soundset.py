@@ -1,10 +1,9 @@
 import pygame as pg
 import os
-import re
 
 SOUNDS = {}
 
-def play(key):
+def play_sound(key):
     SOUNDS[key].play()
 
 def load_sound(key, sound):

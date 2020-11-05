@@ -2,7 +2,7 @@ import pygame as pg
 
 TILES = {}
 
-def get(key):
+def get_tile(key):
     return TILES[key]
 
 def load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None):
@@ -40,7 +40,7 @@ key x y fg bg ; yes palette, white -> fg, black -> bg
 one load_sheet() call, one tilesize. u can load multiple sized images
 using multiple load_sheet() or load_tile() calls
 """
-def load_sheet(tilesize, tilesheet, definitions, palette = 0):
+def load_tileset(tilesize, tilesheet, definitions, palette = 0):
     sheet = pg.image.load(tilesheet).convert_alpha()
 
     if palette:

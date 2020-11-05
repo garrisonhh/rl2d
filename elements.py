@@ -34,7 +34,7 @@ class Sprite(sprite.Sprite):
 
         #detect if image is a tileset key
         if not isinstance(image, Surface):
-            image = tset.get(image)
+            image = tset.get_tile(image)
 
         #detect sprite size as necessary
         if not self.ssize:
@@ -95,6 +95,9 @@ class Sprite(sprite.Sprite):
     def draw_height(self):
         return self.rect.bottom + self.dhoffset
 
+    def cur_loc(self):
+        return self.__descale((self.rect.x, self.rect.y))
+
     def __scale(self, loc):
         return (loc[0] * self.tsize[0], loc[1] * self.tsize[1])
 
@@ -150,7 +153,7 @@ class Sprite(sprite.Sprite):
 
 class Particle(Sprite):
     """
-    particles are sprites with a limited lifespan
+    particles are sprites with a limited lifespan (in ms)
     they spawn with the center at loc rather than the top left corner
     particles can move over lifespan by setting rel to an offset
         unsure of what other features to add
