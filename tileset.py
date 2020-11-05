@@ -20,11 +20,12 @@ def load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None):
             bg = palette.get_at((bg, 0))
         else:
             bg = (0, 0, 0, 0)
+
         for y in range(rect[3]):
             for x in range(rect[2]):
                 if tile.get_at((x, y))[:3] == (0, 0, 0):
                     tile.set_at((x, y), bg)
-                elif tile.get_at((x, y))[:3] == (255, 255, 255):
+                else:
                     tile.set_at((x, y), fg)
 
     global TILES
