@@ -93,7 +93,7 @@ def load_tileset(tilesize, tilesheet, definitions, palette = 0):
 
                 load_tile(sheet, key, rect, palette, fg, bg, rotate, fv, fh)
             else:
-                load_tile(sheet, key, rect, rotate, fv, fh)
+                load_tile(sheet, key, rect, rotate = rotate, fv = fv, fh = fh)
 
 """
 loads all possible printable characters for the tilesheet in specified encoding
