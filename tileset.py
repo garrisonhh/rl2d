@@ -5,13 +5,18 @@ TILES = {}
 def get_tile(key):
     return TILES[key]
 
-def load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None):
+def load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None, rotate = 0, fv = 0, fh = 0):
     tile = 0
     if rect == 0: # no rect -> whole image is tile
         rect = (0, 0, *sheet.get_size())
         tile = sheet.copy()
     else: # rect -> subsurface of image is tile
         tile = sheet.subsurface(rect).copy()
+
+    if rotate != 0:
+        tile = pg.transform.rotate(tile, 90 * rotate)
+    if fv or fh:
+        tile = pg.transform.flip(tile, fh, fv)
 
     # recolor
     if palette:
@@ -37,6 +42,8 @@ defs look like this:
 key x y ; no palette
 key x y fg ; yes palette, white -> fg, black -> transparent
 key x y fg bg ; yes palette, white -> fg, black -> bg
+key x y -fv ; no palette, flip vertically and horizontally
+key x y fg bg -r2 ; no palette, rotate 90 degrees twice
 
 one load_sheet() call, one tilesize. u can load multiple sized images
 using multiple load_sheet() or load_tile() calls
@@ -57,8 +64,25 @@ def load_tileset(tilesize, tilesheet, definitions, palette = 0):
             if len(line) == 0:
                 continue
 
+            # key x y arguments
             key = line[0]
             rect = (int(line[1]) * tilesize[0], int(line[2]) * tilesize[1], *tilesize)
+
+            # get rotate, flip horizontal, and flip vertical arguments
+            rotate = 0
+            fv = 0
+            fh = 0
+            for i in range(len(line) - 1, -1, -1):
+                if line[i].startswith('-r'):
+                    rotate = int(line[i][2:])
+                elif line[i] == '-fv':
+                    fv = 1
+                elif line[i] == '-fh':
+                    fh = 1
+                else:
+                    continue
+
+                del line[i]
 
             if palette:
                 #get colors
@@ -67,9 +91,9 @@ def load_tileset(tilesize, tilesheet, definitions, palette = 0):
                 if len(line) > 4:
                     bg = int(line[4])
 
-                load_tile(sheet, key, rect, palette, fg, bg)
+                load_tile(sheet, key, rect, palette, fg, bg, rotate, fv, fh)
             else:
-                load_tile(sheet, key, rect)
+                load_tile(sheet, key, rect, rotate, fv, fh)
 
 """
 loads all possible printable characters for the tilesheet in specified encoding

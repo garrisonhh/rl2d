@@ -16,7 +16,7 @@ get_tile(key)
 
     RETURNS pygame Surface
 
-load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None)
+load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None, rotate = 0, fv = 0, fh = 0)
     PARAMS
         sheet - pg.Surface
         key
@@ -24,6 +24,9 @@ load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None)
         palette - if passed, fg and bg will replace non-black and black
         fg - foreground color from palette
         bg - background color from palette. if not passed, image will be transparent
+        rotate - number of times to rotate 90 degrees
+        fv - boolean; flip tile horizontally
+        fh - boolean; flip tile vertically
 
     RETURNS void
 
@@ -40,14 +43,13 @@ load_tileset(tilesize, tilesheet, definitions, palette = 0)
     RETURNS void
 
     NOTES
-        definitions look like this:
+        defs look like this:
         ; this is a comment
         key x y ; no palette
         key x y fg ; yes palette, white -> fg, black -> transparent
         key x y fg bg ; yes palette, white -> fg, black -> bg
-
-    one load_sheet() call, one tilesize. u can load multiple sized images
-    using multiple load_sheet() or load_tile() calls
+        key x y -fv ; no palette, flip vertically and horizontally
+        key x y fg bg -r2 ; no palette, rotate 90 degrees twice
 
 load_font(charsize, tilesheet, encoding = 'ascii', palette = 0, fg = None, bg = None)
     DESC
