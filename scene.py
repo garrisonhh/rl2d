@@ -6,9 +6,9 @@ class Layer(pg.Surface):
     """
     Layers have basic functionality for drawing tilesets onto a grid.
     """
-    def __init__(self, size, tilesize):
-        self.size = size
+    def __init__(self, tilesize, size):
         self.tsize = tilesize
+        self.size = size
 
         super().__init__(
             (size[0] * self.tsize[0], size[1] * self.tsize[1]),
@@ -109,8 +109,8 @@ class Scene(pg.Surface):
             if a drawheightoffset is specified)
 
     """
-    def __init__(self, size, tilesize, elementgroups = 1, defaultgroup = 0):
-        self.bg = Layer(size, tilesize)
+    def __init__(self, tilesize, size, elementgroups = 1, defaultgroup = 0):
+        self.bg = Layer(tilesize, size)
         super().__init__(self.bg.get_size())
 
         self.tsize = tilesize
