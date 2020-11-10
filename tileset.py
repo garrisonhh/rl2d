@@ -107,18 +107,18 @@ loads all possible printable characters for the tilesheet in specified encoding
 see python 3's encodings documentation for reference on encoding:
 https://docs.python.org/3/library/codecs.html#standard-encodings
 """
-def load_font(charsize, tilesheet, encoding = 'ascii', palette = 0, fg = None, bg = None):
+def load_font(tilesize, tilesheet, encoding = 'ascii', palette = 0, fg = None, bg = None):
     sheet = pg.image.load(tilesheet).convert_alpha()
 
     if palette:
         palette = pg.image.load(palette)
 
-    row = int(sheet.get_width() / charsize[0])
-    for y in range(int(sheet.get_height() / charsize[1])):
+    row = int(sheet.get_width() / tilesize[0])
+    for y in range(int(sheet.get_height() / tilesize[1])):
         for x in range(row):
             #this turns the index of the character into a string of the specified encoding.
             c = bytes([y * row + x])
             c = c.decode(encoding, errors = 'ignore')
 
             if c.isprintable():
-                load_tile(sheet, c, (x * charsize[0], y * charsize[1], *charsize), palette, fg, bg)
+                load_tile(sheet, c, (x * tilesize[0], y * tilesize[1], *tilesize), palette, fg, bg)
