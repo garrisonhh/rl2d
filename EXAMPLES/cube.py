@@ -3,7 +3,6 @@ import rl2d
 import pygame as pg
 import numpy as np
 import math
-from mymath import bresenham
 
 def asset_path(fname):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets\\" + fname)
@@ -15,6 +14,43 @@ ORTHO = np.array([[1.0, 0.5, 0.0],
 ISO = np.array([[1, -1, 0],
                 [.5, .5, -1],
                 [0, 0, 0]])
+
+def bresenham(a, b):
+    #from https://www.gatevidyalay.com/bresenham-line-drawing-algorithm/
+    reverse = False
+    ystep = 1
+    if a[0] > b[0]:
+        a, b = b, a
+        reverse = True
+    if b[1] < a[1]:
+        ystep = -1
+
+    #only works from this point if x < bx, y < by, and dx >= dy
+    dx, dy = abs(b[0] - a[0]), abs(b[1] - a[1])
+
+    flipd = dy > dx
+    if flipd:
+        dx, dy = dy, dx
+
+    p = 2 * dy - dx
+
+    line = []
+    y = 0
+
+    for x in range(1, dx + 1):
+        if p >= 0:
+            p -= 2 * dx
+            y += ystep
+        p += 2 * dy
+
+        if flipd:
+            line.append((a[0] + (y * ystep), a[1] + (x * ystep)))
+        else:
+            line.append((a[0] + x, a[1] + y))
+
+    if reverse:
+        return line[::-1] + [tuple(a)]
+    return [tuple(a)] + line
 
 def project(x, y, z, scale = 1, offset = (0, 0), transform = None):
     vec = np.array((x, y, z)).reshape(3, 1)
