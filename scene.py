@@ -15,6 +15,9 @@ class Layer(pg.Surface):
             flags = pg.SRCALPHA
         )
 
+    """
+    draw tile 'key' at (x, y) 'loc'
+    """
     def set(self, loc, key):
         loc = (loc[0] * self.tsize[0], loc[1] * self.tsize[1])
         self.blit(tset.get_tile(key), loc)
@@ -90,11 +93,17 @@ class Layer(pg.Surface):
         for i in range(len(iterable)):
             self.set((loc[0] + i, loc[1]), iterable[i])
 
+    """
+    draw tile 'key' in a filled rectangle (x, y, w, h) 'rect'
+    """
     def box(self, rect, key):
         for y in range(rect[1], rect[1] + rect[3]):
             for x in range(rect[0], rect[0] + rect[2]):
                 self.set((x, y), key)
 
+    """
+    fill layer with tile 'key'
+    """
     def fill(self, key):
         self.box((0, 0, *self.size), key)
 
@@ -121,6 +130,9 @@ class Scene(pg.Surface):
         for i in range(elementgroups):
             self.groups.append(pg.sprite.LayeredUpdates())
 
+    """
+    add element 'element' to Scene in group 'group' if submitted
+    """
     def add(self, element, group = None):
         if isinstance(element, pg.sprite.Sprite):
             if group is None:
@@ -128,10 +140,16 @@ class Scene(pg.Surface):
             self.groups[group].add(element)
         return element
 
+    """
+    add spawner 'spawner' to scene
+    """
     def add_spawner(self, spawner):
         spawner.scene = self
         self.spawners.append(spawner)
 
+    """
+    call with a pg.time.Clock().get_time() for dt
+    """
     def update(self, dt):
         self.fill((0, 0, 0))
         self.blit(self.bg, (0, 0))

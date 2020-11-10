@@ -37,6 +37,12 @@ def load_tile(sheet, key, rect = 0, palette = 0, fg = None, bg = None, rotate = 
     TILES[key] = tile
 
 """
+loads a tileset with params:
+tilesize - (w, h)
+tilesheet - image file path
+definitions - look below
+palette - Nx1 size image with N colors
+
 defs look like this:
 ; this is a comment
 key x y ; no palette
