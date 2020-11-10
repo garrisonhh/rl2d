@@ -76,25 +76,38 @@ class Sprite(sprite.Sprite):
 
         self.__setabsloc(location)
 
+    """
+    boolean moving
+    """
     def moving(self):
         return self.movdur > 0
 
+    """
+    change animation
+    """
     def set_anim(self, key, frame = 0):
         self.anim = self.anims[key]
         self.frame = frame
         self.image, self.framedur = self.anim[frame]
 
-    #move to absolute location with __move
+    """
+    move to absolute location with __move
+    """
     def move_abs(self, loc, duration = 0):
         self.__move((loc[0] - self.dstloc[0], loc[1] - self.dstloc[1]), loc, duration)
 
-    #move by offset with __move
+    """
+    move by offset with __move
+    """
     def move_rel(self, rel, duration = 0):
         self.__move(rel, (rel[0] + self.dstloc[0], rel[1] + self.dstloc[1]), duration)
 
     def draw_height(self):
         return self.rect.bottom + self.dhoffset
 
+    """
+    current location on grid
+    """
     def cur_loc(self):
         return self.__descale((self.rect.x, self.rect.y))
 
@@ -123,16 +136,17 @@ class Sprite(sprite.Sprite):
         self.curpos = self.__scale(loc)
         self.rect.midbottom = (self.curpos[0] + int(self.tsize[0] // 2), self.curpos[1] + self.tsize[1])
 
+    # called by Scene().update(dt)
     def update(self, dt):
-        #movement
+        # movement
         if self.movdur != 0:
-            #move along vector
+            # move along vector
             time = dt / 1000
             dx, dy = self.__scale((time * self.movvec[0], time * self.movvec[1]))
             self.curpos = (self.curpos[0] + dx, self.curpos[1] + dy)
             self.rect.midbottom = (self.curpos[0] + (self.tsize[0] / 2), self.curpos[1] + self.tsize[1])
 
-            #if move duration is finite, tick move duration down until 0
+            # if move duration is finite, tick move duration down until 0
             if self.movdur > 0:
                 self.movdur -= dt
 
@@ -140,7 +154,7 @@ class Sprite(sprite.Sprite):
                     self.movdur = 0
                     self.__setabsloc(self.dstloc)
 
-        #animate as necessary
+        # animate as necessary
         if self.anims and len(self.anim) > 1:
             self.framedur -= dt
 
@@ -169,6 +183,7 @@ class Particle(Sprite):
         if vector:
             self.move_rel(vector, -1)
 
+    # called by Scene().update(dt)
     def update(self, dt):
         self.age += dt
 

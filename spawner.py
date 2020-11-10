@@ -3,7 +3,7 @@ import random
 class Spawner:
     """
     spawns an element every interval +-variance milliseconds
-    pass a constructor, with the expectation that cosntructor() will return a valid element
+    pass a constructor function, assumes that constructor() will return a valid element
     """
     def __init__(self, constructor, interval, variance, group = 0):
         self.scene = None # this is set in rl2d.Scene.add_spawner
