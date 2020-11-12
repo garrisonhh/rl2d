@@ -1,6 +1,6 @@
 import pygame as pg
 from rl2d.elements import *
-from rl2d import tileset as tset
+from rl2d import tileset
 
 class Layer(pg.Surface):
     """
@@ -12,15 +12,14 @@ class Layer(pg.Surface):
 
         super().__init__(
             (size[0] * self.tsize[0], size[1] * self.tsize[1]),
-            flags = pg.SRCALPHA
-        )
+            flags = pg.SRCALPHA)
 
     """
     draw tile 'key' at (x, y) 'loc'
     """
     def set(self, loc, key):
         loc = (loc[0] * self.tsize[0], loc[1] * self.tsize[1])
-        self.blit(tset.get_tile(key), loc)
+        self.blit(tileset.get_tile(key), loc)
 
     """
     write allows writing an iterable of keys
@@ -107,24 +106,49 @@ class Layer(pg.Surface):
     def fill(self, key):
         self.box((0, 0, *self.size), key)
 
+class OffsetLayer(Layer):
+    """
+    the same as Layer, except with a **PIXEL** offset (x, y) that can be moved around
+    """
+    def __init__(self, tilesize, size, origin = (0, 0)):
+        super().__init__(tilesize, size)
+
+        self.origin = list(origin)
+
+    def set(self, loc, key):
+        super().set((loc[0] - self.origin[0], loc[1] - self.origin[1]), key)
+
+    def move_origin(self, rel):
+        self.origin = [self.origin[i] + rel[i] for i in (0, 1)]
+
+    def set_origin(self, origin):
+        self.origin = list(origin)
+
 class Scene(pg.Surface):
     """
     Scenes consist of a background Layer and foreground elements (particles
     and sprites) that are drawn over the background.
     """
-    def __init__(self, tilesize, size):
-        self.bg = Layer(tilesize, size)
+    def __init__(self, tilesize, size, origin = (0, 0)):
+        self.bg = OffsetLayer(tilesize, size, origin = origin)
         super().__init__(self.bg.get_size())
 
         self.spawners = []
-
         self.group = ElementGroup()
 
+    # origin ops affect both bg and fg elements, so wrapping them here
+    def move_origin(self, rel):
+        self.bg.move_origin(rel)
+
+    def set_origin(self, origin):
+        self.bg.set_origin(origin)
+
     """
-    add element 'element' to Scene in group 'group' if submitted
+    add element 'element' to Scene
+    use Sprite kwarg 'layer' to change group player being placed on
     """
-    def add(self, element, layer = 0):
-        self.group.add(element, layer = layer)
+    def add(self, element):
+        self.group.add(element)
         return element
 
     """
@@ -146,4 +170,4 @@ class Scene(pg.Surface):
 
         self.group.update(dt)
         self.group.order_sprites()
-        self.group.draw(self)
+        self.group.draw(self, self.bg.origin)

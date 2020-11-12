@@ -6,15 +6,17 @@ class Sprite(sprite.Sprite):
     Sprite assumes that it is the same size as the tilesize, unless spritesize is specified
         the bottom center of the sprite will always be the at the bottom center of the tile, regardless of sprite size
     """
-    def __init__(self, tilesize, location, image, drawheightoffset = 0):
+    def __init__(self, tilesize, location, image, grouplayer = 0, drawheightoffset = 0, static = False):
         super().__init__()
 
         self.image = image
         self.rect = Rect(0, 0, *tilesize)
+        self._layer = grouplayer # for ElementGroup
 
         self.tsize = tilesize
-        self.animated = isinstance(self.image, SpriteAnimation)
         self.dhoffset = drawheightoffset * self.tsize[1]
+        self.static = static # whether sprite is offset by origin, or at a static position on the screen
+        self.animated = isinstance(self.image, SpriteAnimation)
 
         #detect image
         if self.animated:
@@ -214,3 +216,31 @@ class ElementGroup(sprite.LayeredUpdates):
         for i in range(maxlayer + 1):
             if i in layers:
                 self._spritelist += sorted(layers[i], key = sort)
+
+    """
+    draw sprites to surface in order, returns updated rects on screen
+    pass an origin to change blit location for entire group
+    """
+    def draw(self, surface, origin = (0, 0)):
+        updated = self.lostsprites
+        self.lostsprites = []
+
+        for spr in self.sprites():
+            sprpos = spr.rect.topleft
+            if not spr.static:
+                sprpos = [sprpos[i] + origin[i] for i in (0, 1)]
+
+            rec = self.spritedict[spr]
+            newrect = surface.blit(spr.image, sprpos)
+
+            if rec is self._init_rect:
+                updated.append(newrect)
+            else:
+                if newrect.colliderect(rec):
+                    updated.append(newrect.union(rec))
+                else:
+                    updated.append(newrect)
+                    updated.append(rec)
+            self.spritedict[spr] = newrect
+
+        return updated

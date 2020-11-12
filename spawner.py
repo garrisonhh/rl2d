@@ -5,12 +5,11 @@ class Spawner:
     spawns an element every interval +-variance milliseconds
     pass a constructor function, assumes that constructor() will return a valid element
     """
-    def __init__(self, constructor, interval, variance, group = 0):
+    def __init__(self, constructor, interval, variance):
         self.scene = None # this is set in rl2d.Scene.add_spawner
         self.constructor = constructor
         self.interval = interval
         self.variance = variance
-        self.group = group
 
         self.tick = 0
 
@@ -23,5 +22,5 @@ class Spawner:
         self.tick -= dt
 
         if self.tick <= 0:
-            self.scene.add(self.constructor(), group = self.group)
+            self.scene.add(self.constructor())
             self.__next_interval()
