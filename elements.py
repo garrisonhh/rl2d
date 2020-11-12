@@ -1,72 +1,26 @@
 from pygame import Rect, sprite, Surface
-from rl2d import tileset as tset
+from rl2d import tileset
 
 class Sprite(sprite.Sprite):
     """
     Sprite assumes that it is the same size as the tilesize, unless spritesize is specified
         the bottom center of the sprite will always be the at the bottom center of the tile, regardless of sprite size
-
-    if specified, animations should be a dict for each row of the image
-        image will choose the first row
-        key will be the name of the animation
-        value can be:
-            tuple (numFrames, durationFrames)
-            list [duration0, duration1, ... durationN]
-        Sprite.anims will become a dict of {key : [(frame0, dur0), (frame1, dur1), ... (frameN, durN)]}
-    set startanim to an animation key to set the animation at initialization
-        otherwise, it will attempt to access animations[0]
-
-    when placed in a scene, scene calls draw_height() to sort layers.
     """
-    def __init__(self, tilesize, location, image, spritesize = 0, animations = 0, startanim = 0, drawheightoffset = 0):
+    def __init__(self, tilesize, location, image, drawheightoffset = 0):
         super().__init__()
 
-        self.image = 0
-        self.rect = 0
+        self.image = image
+        self.rect = Rect(0, 0, *tilesize)
+
         self.tsize = tilesize
-
-        self.ssize = spritesize
+        self.animated = isinstance(self.image, SpriteAnimation)
         self.dhoffset = drawheightoffset * self.tsize[1]
-        self.anims = 0
-        self.anim = 0 # current animation arr
-        self.frame = 0 # current frame
-        self.framedur = 0 # ms left on current frame
 
-        #detect if image is a tileset key
-        if not isinstance(image, Surface):
-            image = tset.get_tile(image)
-
-        #detect sprite size as necessary
-        if not self.ssize:
-            #get sprite size (ssize)
-            if image.get_width() != self.tsize[0] or image.get_height() != self.tsize[1]:
-                self.ssize = image.get_size()
-            else:
-                self.ssize = self.tsize
-
-        #get image(s)
-        if animations:
-            self.anims = {}
-            w, h = self.ssize
-            y = 0
-
-            for k, v in animations.items():
-                self.anims[k] = []
-
-                if type(v) is tuple:
-                    for i in range(v[0]):
-                        self.anims[k].append((image.subsurface((i * w, y, w, h)), v[1]))
-                elif type(v) is list:
-                    for i in range(len(v)):
-                        self.anims[k].append((image.subsurface((i * w, y, w, h)), v[i]))
-
-                y += h
-
-            self.set_anim(startanim)
-        else:
-            self.image = image
-
-        self.rect = Rect((0, 0, *self.ssize))
+        #detect image
+        if self.animated:
+            self.rect = Rect(0, 0, *self.image.spritesize)
+        elif not isinstance(self.image, Surface):
+            self.image = tileset.get_tile(image)
 
         #movement vars
         self.curpos = (0, 0) #current position, because Rect doesn't take float arguments
@@ -83,14 +37,6 @@ class Sprite(sprite.Sprite):
         return self.movdur > 0
 
     """
-    change animation
-    """
-    def set_anim(self, key, frame = 0):
-        self.anim = self.anims[key]
-        self.frame = frame
-        self.image, self.framedur = self.anim[frame]
-
-    """
     move to absolute location with __move
     """
     def move_abs(self, loc, duration = 0):
@@ -101,9 +47,6 @@ class Sprite(sprite.Sprite):
     """
     def move_rel(self, rel, duration = 0):
         self.__move(rel, (rel[0] + self.dstloc[0], rel[1] + self.dstloc[1]), duration)
-
-    def draw_height(self):
-        return self.rect.bottom + self.dhoffset
 
     """
     current location on grid
@@ -138,6 +81,9 @@ class Sprite(sprite.Sprite):
 
     # called by Scene().update(dt)
     def update(self, dt):
+        if self.animated:
+            self.image.update(dt)
+
         # movement
         if self.movdur != 0:
             # move along vector
@@ -154,25 +100,11 @@ class Sprite(sprite.Sprite):
                     self.movdur = 0
                     self.__setabsloc(self.dstloc)
 
-        # animate as necessary
-        if self.anims and len(self.anim) > 1:
-            self.framedur -= dt
-
-            if self.framedur <= 0:
-                self.frame += 1
-                self.frame %= len(self.anim)
-
-                self.image = self.anim[self.frame][0]
-                self.framedur += self.anim[self.frame][1]
-
 class Particle(Sprite):
     """
     particles are sprites with a limited lifespan (in ms)
     they spawn with the center at loc rather than the top left corner
-    particles can move over lifespan by setting rel to an offset
-        unsure of what other features to add
-            rotating/scaling doesn't make sense for pixelated format
-        give particles an animation for the cool effects u want!
+    give particles an animation for the cool effects u want!
     """
     def __init__(self, tilesize, location, image, lifespan, vector = 0, **kwargs):
         super().__init__(tilesize, location, image, **kwargs)
@@ -192,3 +124,93 @@ class Particle(Sprite):
             return
 
         super().update(dt)
+
+class SpriteAnimation(Surface):
+    """
+    animations should be a dict for each row of the image
+        image will choose the first row
+        key will be the name of the animation
+        value can be:
+            tuple (numFrames, durationFrames)
+            list [duration0, duration1, ... durationN]
+        Sprite.anims will become a dict of {key : [(frame0, dur0), (frame1, dur1), ... (frameN, durN)]}
+    frame durations:
+        dur >= 0 will play for at least one frame, and go to next frame after 'dur' ms
+        dur < 0 will stop forever
+    """
+    def __init__(self, spritesize, image, animations, default_anim = 0):
+        super().__init__(spritesize)
+
+        self.spritesize = spritesize
+        self.frame = 0 # current frame
+        self.framedur = 0 # ms left on current frame
+        self.anims = {}
+        self.anim = 0 # current animation list from self.anims
+
+        # get anim dict
+        w, h = self.spritesize
+        y = 0
+
+        for k, v in animations.items():
+            self.anims[k] = []
+
+            if type(v) is tuple:
+                for i in range(v[0]):
+                    self.anims[k].append((image.subsurface((i * w, y, w, h)), v[1]))
+            elif type(v) is list:
+                for i in range(len(v)):
+                    self.anims[k].append((image.subsurface((i * w, y, w, h)), v[i]))
+
+            y += h
+
+        self.set_anim(default_anim)
+
+    """
+    change animation
+    """
+    def set_anim(self, key, frame = 0):
+        self.frame = frame
+        self.anim = self.anims[key]
+        self.image, self.framedur = self.anim[self.frame]
+        self.__draw()
+
+    def __draw(self):
+        super().blit(self.anim[self.frame][0], (0, 0))
+
+    # called by Sprite().update(dt)
+    def update(self, dt):
+        # animate as necessary
+        if self.anim[self.frame][1] >= 0:
+            self.framedur -= dt
+
+            if self.framedur <= 0:
+                self.frame += 1
+                self.frame %= len(self.anim)
+                self.framedur = max(self.framedur + self.anim[self.frame][1], 0)
+
+                self.__draw()
+
+class ElementGroup(sprite.LayeredUpdates):
+    """
+    sorts sprites within each layer based upon their bottom y position and their draw height offset
+    """
+    def order_sprites(self):
+        # pop sprites, sort into layers
+        layers = {}
+        maxlayer = 0
+        while len(self._spritelist) > 0:
+            spr = self._spritelist.pop()
+            layer = self._spritelayers[spr]
+            if layer in layers:
+                layers[layer].append(spr)
+            else:
+                layers[layer] = [spr]
+
+            if layer > maxlayer:
+                maxlayer = layer
+
+        # sort each layer and add back to group
+        sort = lambda spr: spr.rect.bottom + spr.dhoffset
+        for i in range(maxlayer + 1):
+            if i in layers:
+                self._spritelist += sorted(layers[i], key = sort)
