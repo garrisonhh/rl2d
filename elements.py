@@ -15,7 +15,7 @@ class Sprite(sprite.Sprite):
 
         self.tsize = tilesize
         self.dhoffset = drawheightoffset * self.tsize[1]
-        self.static = static # whether sprite is offset by origin, or at a static position on the screen
+        self.static = static # whether sprite is drawn relative to screen, or the Scene() origin
         self.animated = isinstance(self.image, SpriteAnimation)
 
         #detect image
@@ -189,7 +189,6 @@ class SpriteAnimation(Surface):
                 self.frame += 1
                 self.frame %= len(self.anim)
                 self.framedur = max(self.framedur + self.anim[self.frame][1], 0)
-
                 self.__draw()
 
 class ElementGroup(sprite.LayeredUpdates):
@@ -228,7 +227,7 @@ class ElementGroup(sprite.LayeredUpdates):
         for spr in self.sprites():
             sprpos = spr.rect.topleft
             if not spr.static:
-                sprpos = [sprpos[i] + origin[i] for i in (0, 1)]
+                sprpos = [sprpos[i] - origin[i] for i in (0, 1)]
 
             rec = self.spritedict[spr]
             newrect = surface.blit(spr.image, sprpos)
