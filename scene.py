@@ -111,33 +111,20 @@ class Scene(pg.Surface):
     """
     Scenes consist of a background Layer and foreground elements (particles
     and sprites) that are drawn over the background.
-
-    Scene automatically manages updating the screen when fg elements move.
-        Scene draws groups back-to-front (group 0 is on top, group N is back)
-            within groups, sprites are ordered based upon y position (and offset
-            if a drawheightoffset is specified)
-
     """
-    def __init__(self, tilesize, size, elementgroups = 1, defaultgroup = 0):
+    def __init__(self, tilesize, size):
         self.bg = Layer(tilesize, size)
         super().__init__(self.bg.get_size())
 
-        self.tsize = tilesize
-
         self.spawners = []
-        self.dgroup = defaultgroup
-        self.groups = []
-        for i in range(elementgroups):
-            self.groups.append(pg.sprite.LayeredUpdates())
+
+        self.group = ElementGroup()
 
     """
     add element 'element' to Scene in group 'group' if submitted
     """
-    def add(self, element, group = None):
-        if isinstance(element, pg.sprite.Sprite):
-            if group is None:
-                group = self.dgroup
-            self.groups[group].add(element)
+    def add(self, element, layer = 0):
+        self.group.add(element, layer = layer)
         return element
 
     """
@@ -157,11 +144,6 @@ class Scene(pg.Surface):
         for spawner in self.spawners:
             spawner.update(dt)
 
-        for group in self.groups[::-1]:
-            group.update(dt)
-
-            #determine sprite layers (this looks hacky and slow but it runs better than the more complicated stuff I tried)
-            for sprite in group.sprites():
-                group.change_layer(sprite, sprite.draw_height())
-
-            group.draw(self)
+        self.group.update(dt)
+        self.group.order_sprites()
+        self.group.draw(self)
