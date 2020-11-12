@@ -227,7 +227,7 @@ class ElementGroup(sprite.LayeredUpdates):
         for spr in self.sprites():
             sprpos = spr.rect.topleft
             if not spr.static:
-                sprpos = [sprpos[i] - origin[i] for i in (0, 1)]
+                sprpos = [sprpos[i] + origin[i] for i in (0, 1)]
 
             rec = self.spritedict[spr]
             newrect = surface.blit(spr.image, sprpos)
