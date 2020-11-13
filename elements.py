@@ -149,6 +149,10 @@ class SpriteAnimation(Surface):
         self.anims = {}
         self.anim = 0 # current animation list from self.anims
 
+        # reference tileset if needed
+        if not isinstance(image, Surface):
+            image = tileset.get_tile(image)
+
         # get anim dict
         w, h = self.spritesize
         y = 0
