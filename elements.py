@@ -79,6 +79,9 @@ class Sprite(sprite.Sprite):
     def __setabsloc(self, loc):
         self.dstloc = loc
         self.curpos = self.__scale(loc)
+        self.__apply_curpos()
+
+    def __apply_curpos(self):
         self.rect.midbottom = (self.curpos[0] + int(self.tsize[0] // 2), self.curpos[1] + self.tsize[1])
 
     # called by Scene().update(dt)
@@ -92,7 +95,7 @@ class Sprite(sprite.Sprite):
             time = dt / 1000
             dx, dy = self.__scale((time * self.movvec[0], time * self.movvec[1]))
             self.curpos = (self.curpos[0] + dx, self.curpos[1] + dy)
-            self.rect.midbottom = (self.curpos[0] + (self.tsize[0] / 2), self.curpos[1] + self.tsize[1])
+            self.__apply_curpos()
 
             # if move duration is finite, tick move duration down until 0
             if self.movdur > 0:

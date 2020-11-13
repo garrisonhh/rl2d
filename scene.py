@@ -119,7 +119,7 @@ class OffsetLayer(Layer):
         self.set_origin([self.origin[i] + rel[i] for i in (0, 1)])
 
     def set_origin(self, origin):
-        self.origin = list(origin)
+        self.origin = [int(v) for v in origin]
 
 class Scene(pg.Surface):
     """
@@ -162,12 +162,17 @@ class Scene(pg.Surface):
     call with a pg.time.Clock().get_time() for dt
     """
     def update(self, dt):
-        self.fill((0, 0, 0))
-        self.blit(self.bg, (0, 0))
-
         for spawner in self.spawners:
             spawner.update(dt)
 
         self.group.update(dt)
         self.group.order_sprites()
+
+    """
+    draw everything
+    """
+    def draw(self):
+        self.fill((0, 0, 0))
+        self.blit(self.bg, (0, 0))
+
         self.group.draw(self, self.bg.origin)
