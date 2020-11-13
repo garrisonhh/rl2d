@@ -163,6 +163,9 @@ class Scene(pg.Surface):
     def set_origin(self, origin):
         self.bg.set_origin(origin)
 
+    def get_origin(self):
+        return self.bg.origin
+
     """
     add element 'element' to Scene
     use Sprite kwarg 'layer' to change group player being placed on
