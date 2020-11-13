@@ -10,9 +10,7 @@ class Layer(pg.Surface):
         self.tsize = tilesize
         self.size = size
 
-        super().__init__(
-            (size[0] * self.tsize[0], size[1] * self.tsize[1]),
-            flags = pg.SRCALPHA)
+        super().__init__((size[0] * self.tsize[0], size[1] * self.tsize[1]))
 
     """
     draw tile 'key' at (x, y) 'loc'

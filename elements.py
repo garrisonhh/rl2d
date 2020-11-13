@@ -1,4 +1,4 @@
-from pygame import Rect, sprite, Surface
+from pygame import Rect, sprite, Surface, SRCALPHA
 from rl2d import tileset
 
 class Sprite(sprite.Sprite):
@@ -141,7 +141,7 @@ class SpriteAnimation(Surface):
         dur < 0 will stop forever
     """
     def __init__(self, spritesize, image, animations, default_anim = 0):
-        super().__init__(spritesize)
+        super().__init__(spritesize, flags = SRCALPHA)
 
         self.spritesize = spritesize
         self.frame = 0 # current frame
@@ -177,11 +177,11 @@ class SpriteAnimation(Surface):
     def set_anim(self, key, frame = 0):
         self.frame = frame
         self.anim = self.anims[key]
-        self.image, self.framedur = self.anim[self.frame]
+        self.framedur = self.anim[self.frame][1]
         self.__draw()
 
     def __draw(self):
-        super().fill((0, 0, 0))
+        super().fill((0, 0, 0, 0))
         super().blit(self.anim[self.frame][0], (0, 0))
 
     # called by Sprite().update(dt)
