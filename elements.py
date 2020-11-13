@@ -181,6 +181,7 @@ class SpriteAnimation(Surface):
         self.__draw()
 
     def __draw(self):
+        super().fill((0, 0, 0))
         super().blit(self.anim[self.frame][0], (0, 0))
 
     # called by Sprite().update(dt)
@@ -231,7 +232,7 @@ class ElementGroup(sprite.LayeredUpdates):
         for spr in self.sprites():
             sprpos = spr.rect.topleft
             if not spr.static:
-                sprpos = [sprpos[i] + origin[i] for i in (0, 1)]
+                sprpos = [sprpos[i] - origin[i] for i in (0, 1)]
 
             rec = self.spritedict[spr]
             newrect = surface.blit(spr.image, sprpos)

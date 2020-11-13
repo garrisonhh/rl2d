@@ -115,34 +115,13 @@ class OffsetLayer(Layer):
         self.origin = list(origin)
 
     def set(self, loc, key):
-        self.blit(tileset.get_tile(key), [(loc[i] * self.tsize[i]) + self.origin[i] for i in (0, 1)])
+        self.blit(tileset.get_tile(key), [(loc[i] * self.tsize[i]) - self.origin[i] for i in (0, 1)])
 
     def move_origin(self, rel):
         self.set_origin([self.origin[i] + rel[i] for i in (0, 1)])
 
     def set_origin(self, origin):
         self.origin = list(origin)
-        self.clear_artifacts()
-
-    # moving the origin leaves annoying artifacts on the screen, this removes them
-    def clear_artifacts(self, bg_color = (0, 0, 0)):
-        r1 = r2 = 0
-        w, h = self.get_size()
-
-        if self.origin[0] >= 0:
-            r1 = (0, 0, self.origin[0], h)
-        else:
-            r1 = (self.origin[0] + w, 0, w - self.origin[0], h)
-
-        if self.origin[1] >= 0:
-            r2 = (0, 0, w, self.origin[1])
-        else:
-            r2 = (0, self.origin[1] + h, w, h - self.origin[1])
-
-        #print(r1, r2)
-
-        for r in r1, r2:
-            pg.Surface.fill(self, bg_color, [int(v + .5) for v in r])
 
 class Scene(pg.Surface):
     """
